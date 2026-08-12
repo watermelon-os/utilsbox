@@ -154,17 +154,17 @@ process_status *get_all_process_statuses(int *statuses_count) {
   return arr;
 }
 
-void free_process_statuses(process_status *arr, size_t n) {
-  for (size_t j = 0; j < n; j++) {
-    free(arr[j].name);
-    free(arr[j].state);
-    free(arr[j].pid);
-    free(arr[j].ppid);
-    free(arr[j].VmRSS);
-    free(arr[j].VmSize);
-  }
-  free(arr);
-}
+// void free_process_statuses(process_status *arr, size_t n) {
+//   for (size_t j = 0; j < n; j++) {
+//     free(arr[j].name);
+//     free(arr[j].state);
+//     free(arr[j].pid);
+//     free(arr[j].ppid);
+//     free(arr[j].VmRSS);
+//     free(arr[j].VmSize);
+//   }
+//   free(arr);
+// }
 
 int main(int argc, char **argv) {
   (void)argc;
@@ -178,7 +178,7 @@ int main(int argc, char **argv) {
   process_status *arr = get_all_process_statuses(&n);
   if (arr != NULL) {
     print_table_processes_status(arr, n);
-    free_process_statuses(arr, n);
+    // free_process_statuses(arr, n);
   }
   
   return 0;

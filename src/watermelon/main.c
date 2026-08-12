@@ -8,30 +8,33 @@
 #include <unistd.h>
 
 int *get_all_pids(int *pids_count) {
-  int *pids;
+  int *pids = NULL;
   DIR *dir = opendir("/proc");
   if (dir == NULL) {
     printf("Error opening dir: %s\n", strerror(errno));
     return NULL;
   }
 
-  struct dirent *ents = NULL;
-  while ((ents = readdir(dir)) != NULL) {
-    static int i = 0;
-
-    char s_pid[256];
-    strcpy(s_pid, ents->d_name);
-
-    int pid = atoi(s_pid);
+  struct dirent *entries;
+  int i = 0;
+  while ((entries = readdir(dir)) != NULL) {
+    int pid = atoi(entries->d_name);
     if (pid == 0)
       continue;
 
-    pids = realloc(pids, i * sizeof(char *));
-    pids[i - 1] = pid;
+    int *tmp = realloc(pids, (i + 1) * sizeof(int));
+    if (tmp == NULL) {
+      free(pids);
+      closedir(dir);
+      return NULL;
+    }
+    pids = tmp;
+    pids[i] = pid;
+    i++;
   }
 
-  if (pids != NULL)
-    *pids_count = sizeof(pids);
+  closedir(dir);
+  *pids_count = i;
 
   return pids;
 }
@@ -39,13 +42,6 @@ int *get_all_pids(int *pids_count) {
 int main(int argc, char **argv) {
   (void)argc;
   (void)argv;
-
-  // char *cwd;
-  // if ((cwd = getcwd(NULL, 0)) == NULL) {
-  //   perror("Error getting current working directory");
-  //   return EXIT_FAILURE;
-  // }
-  // printf("current work dir: %s\n", cwd);
 
   int count;
   get_all_pids(&count);

@@ -86,16 +86,45 @@ process_status *get_process_info(int pid) {
 }
 
 void print_table_processes_status(process_status **arr_pstatus) {
-  printf("%-15s | %-10s | %-8s | %-8s | %-10s | %-10s\n",
-         "Name", "State", "PID", "PPID", "VmRSS", "VmSize");
-  printf("------------------------------------------------------------\n");
+  const char *headers[] = {"Name", "State", "PID", "PPID", "VmRSS", "VmSize"};
+  const size_t ncols = sizeof(headers) / sizeof(headers[0]);
+  size_t widths[ncols];
+  for (size_t col = 0; col < ncols; col++)
+    widths[col] = strlen(headers[col]);
 
   for (size_t j = 0; arr_pstatus[j] != NULL; j++) {
     process_status *ps = arr_pstatus[j];
-    printf("%-15s | %-10s | %-8s | %-8s | %-10s | %-10s\n",
-           ps->name ? ps->name : "?", ps->state ? ps->state : "?",
-           ps->pid ? ps->pid : "?", ps->ppid ? ps->ppid : "?",
-           ps->VmRSS ? ps->VmRSS : "?", ps->VmSize ? ps->VmSize : "?");
+    const char *vals[] = {
+        ps->name ? ps->name : "?", ps->state ? ps->state : "?",
+        ps->pid ? ps->pid : "?", ps->ppid ? ps->ppid : "?",
+        ps->VmRSS ? ps->VmRSS : "?", ps->VmSize ? ps->VmSize : "?"};
+    for (size_t col = 0; col < ncols; col++) {
+      size_t len = strlen(vals[col]);
+      if (len > widths[col])
+        widths[col] = len;
+    }
+  }
+
+  for (size_t col = 0; col < ncols; col++)
+    printf("%s%-*s", col ? " | " : "", (int)widths[col], headers[col]);
+  printf("\n");
+
+  size_t total = 0;
+  for (size_t col = 0; col < ncols; col++)
+    total += widths[col] + (col ? 3 : 0);
+  for (size_t i = 0; i < total; i++)
+    putchar('-');
+  printf("\n");
+
+  for (size_t j = 0; arr_pstatus[j] != NULL; j++) {
+    process_status *ps = arr_pstatus[j];
+    const char *vals[] = {
+        ps->name ? ps->name : "?", ps->state ? ps->state : "?",
+        ps->pid ? ps->pid : "?", ps->ppid ? ps->ppid : "?",
+        ps->VmRSS ? ps->VmRSS : "?", ps->VmSize ? ps->VmSize : "?"};
+    for (size_t col = 0; col < ncols; col++)
+      printf("%s%-*s", col ? " | " : "", (int)widths[col], vals[col]);
+    printf("\n");
   }
 }
 
@@ -152,9 +181,6 @@ int main(int argc, char **argv) {
     print_table_processes_status(arr);
     free_process_statuses(arr);
   }
-
-  // puts("Входждения в /proc");
-  // walk_dir("/proc");
-
+  
   return 0;
 }

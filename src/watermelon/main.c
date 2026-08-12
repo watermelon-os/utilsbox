@@ -46,7 +46,7 @@ typedef struct {
   char *name, *state, *pid, *ppid, *VmRSS, *VmSize;
 } process_status;
 
-process_status *get_process_info(int pid) {
+process_status *get_process_status(int pid) {
   char filename_status[100];
   snprintf(filename_status, sizeof(filename_status), "/proc/%d/status", pid);
 
@@ -85,15 +85,15 @@ process_status *get_process_info(int pid) {
   return status;
 }
 
-void print_table_processes_status(process_status **arr_pstatus) {
+void print_table_processes_status(process_status *arr, size_t n) {
   const char *headers[] = {"Name", "State", "PID", "PPID", "VmRSS", "VmSize"};
   const size_t ncols = sizeof(headers) / sizeof(headers[0]);
   size_t widths[ncols];
   for (size_t col = 0; col < ncols; col++)
     widths[col] = strlen(headers[col]);
 
-  for (size_t j = 0; arr_pstatus[j] != NULL; j++) {
-    process_status *ps = arr_pstatus[j];
+  for (size_t j = 0; j < n; j++) {
+    process_status *ps = &arr[j];
     const char *vals[] = {
         ps->name ? ps->name : "?", ps->state ? ps->state : "?",
         ps->pid ? ps->pid : "?", ps->ppid ? ps->ppid : "?",
@@ -116,8 +116,8 @@ void print_table_processes_status(process_status **arr_pstatus) {
     putchar('-');
   printf("\n");
 
-  for (size_t j = 0; arr_pstatus[j] != NULL; j++) {
-    process_status *ps = arr_pstatus[j];
+  for (size_t j = 0; j < n; j++) {
+    process_status *ps = &arr[j];
     const char *vals[] = {
         ps->name ? ps->name : "?", ps->state ? ps->state : "?",
         ps->pid ? ps->pid : "?", ps->ppid ? ps->ppid : "?",
@@ -128,13 +128,13 @@ void print_table_processes_status(process_status **arr_pstatus) {
   }
 }
 
-process_status **get_all_process_statuses(void) {
+process_status *get_all_process_statuses(int *statuses_count) {
   int count;
   int *pids = get_all_pids(&count);
   if (pids == NULL)
     return NULL;
 
-  process_status **arr = calloc(count + 1, sizeof(process_status *));
+  process_status *arr = calloc(count, sizeof(process_status));
   if (arr == NULL) {
     free(pids);
     return NULL;
@@ -142,28 +142,26 @@ process_status **get_all_process_statuses(void) {
 
   int n = 0;
   for (int i = 0; i < count; i++) {
-    process_status *ps = get_process_info(pids[i]);
-    if (ps != NULL)
-      arr[n++] = ps;
+    process_status *ps = get_process_status(pids[i]);
+    if (ps != NULL) {
+      arr[n++] = *ps;
+      free(ps);
+    }
   }
-  arr[n] = NULL;
 
   free(pids);
+  *statuses_count = n;
   return arr;
 }
 
-void free_process_statuses(process_status **arr) {
-  if (arr == NULL)
-    return;
-
-  for (size_t j = 0; arr[j] != NULL; j++) {
-    free(arr[j]->name);
-    free(arr[j]->state);
-    free(arr[j]->pid);
-    free(arr[j]->ppid);
-    free(arr[j]->VmRSS);
-    free(arr[j]->VmSize);
-    free(arr[j]);
+void free_process_statuses(process_status *arr, size_t n) {
+  for (size_t j = 0; j < n; j++) {
+    free(arr[j].name);
+    free(arr[j].state);
+    free(arr[j].pid);
+    free(arr[j].ppid);
+    free(arr[j].VmRSS);
+    free(arr[j].VmSize);
   }
   free(arr);
 }
@@ -172,14 +170,15 @@ int main(int argc, char **argv) {
   (void)argc;
   (void)argv;
 
-  int count;
-  get_all_pids(&count);
-  printf("количество процессов сейчас %d\n", count);
+  int pids_count;
+  get_all_pids(&pids_count);
+  printf("количество процессов сейчас %d\n", pids_count);
 
-  process_status **arr = get_all_process_statuses();
+  int n;
+  process_status *arr = get_all_process_statuses(&n);
   if (arr != NULL) {
-    print_table_processes_status(arr);
-    free_process_statuses(arr);
+    print_table_processes_status(arr, n);
+    free_process_statuses(arr, n);
   }
   
   return 0;

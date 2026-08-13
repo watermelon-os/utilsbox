@@ -2,10 +2,10 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Debug watermelon",
+            "name": "Debug watermelon-ps",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/watermelon",
+            "program": "${workspaceFolder}/build/watermelon-ps",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

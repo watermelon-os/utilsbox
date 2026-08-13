@@ -22,7 +22,7 @@ $(BUILD_DIR)/%: $(SRC_DIR)/%/main.c $(COMMON_OBJS)
 	mkdir -p $(@D)
 	$(CC) $(CFLAGS) -I$(COMMON_DIR) -o $@ $< $(COMMON_OBJS)
 
-# запуск конкретной утилиты: make run TOOL=watermelon
+# запуск конкретной утилиты: make run TOOL=watermelon-ps
 TOOL ?= $(firstword $(TOOLS))
 run: $(BUILD_DIR)/$(TOOL)
 	$(BUILD_DIR)/$(TOOL)

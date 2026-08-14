@@ -3,12 +3,12 @@ CFLAGS = -Wall -Wextra -g
 
 SRC_DIR = src
 COMMON_DIR = $(SRC_DIR)/common
-BUILD_DIR = build
+BUILD_DIR = .build
 
-TOOLS   = $(patsubst $(SRC_DIR)/%/main.c,%,$(wildcard $(SRC_DIR)/*/main.c))
+TOOLS = watermelon-ps
 TARGETS = $(addprefix $(BUILD_DIR)/,$(TOOLS))
 
-COMMON_OBJS = $(patsubst $(COMMON_DIR)/%.c,$(BUILD_DIR)/common/%.o,$(wildcard $(COMMON_DIR)/*.c))
+COMMON_OBJS = $(BUILD_DIR)/common/hello.o
 
 all: $(TARGETS)
 
@@ -22,16 +22,22 @@ $(BUILD_DIR)/%: $(SRC_DIR)/%/main.c $(COMMON_OBJS)
 	mkdir -p $(@D)
 	$(CC) $(CFLAGS) -I$(COMMON_DIR) -o $@ $< $(COMMON_OBJS)
 
-# запуск конкретной утилиты: make run TOOL=watermelon-ps
-TOOL ?= $(firstword $(TOOLS))
-run: $(BUILD_DIR)/$(TOOL)
-	$(BUILD_DIR)/$(TOOL)
 
-
+NAME    := myapp
+VERSION := $(subst  dirty,$(shell date +%Y%m%d%H%M),$(subst heads/,,$(shell git describe --all --dirty))) # коммит, а если dirty то комит и время сборки
 TOPDIR  := $(CURDIR)/.rpmbuild   # свой топдир на проект
 SPEC    := $(NAME).spec
 
+
+$(DIST):
+	mkdir -p $(TOPDIR)/{BUILD,BUILDROOT,SOURCES,SPECS,RPMS,SRPMS}
+	git archive --format=tar --prefix=$(NAME)-$(VERSION)/ HEAD > $@
+	cp $(SPEC) $(TOPDIR)/SPECS/
+
+
+# SPEC    := $(NAME).spec
 rpm: $(TARGETS)
+
 	# компиляция
 	# подготовка топдир
 	# именованный перенос спеки, бинарного файла в сурс и других файлов для установки
@@ -40,14 +46,8 @@ rpm: $(TARGETS)
 clean:
 	rm -rf $(BUILD_DIR)
 
-.PHONY: all run clean fff/cc/ww.a fff/cc/ww.b
-
-%.fo: %.a %.b
-	@echo $^ 
-	@echo $@
-	@echo $<
-	@echo $*
+.PHONY: all run clean
 
 print:
-	@echo $(TOOLS)
-	@echo $(TARGETS)
+	@echo $(CURDIR)
+	@echo $(VERSION)

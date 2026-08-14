@@ -1,0 +1,59 @@
+# Общие переменные и правила для всех утилит.
+# Подключается из src/<tool>/Makefile:  include $(ROOT)/Makefile.common
+# ROOT — абсолютный путь к корню проекта (задаётся в Makefile утилиты).
+
+CC ?= gcc
+CFLAGS ?= -Wall -Wextra -g
+
+# TOOL задаётся в Makefile утилиты (по умолчанию = имя каталога)
+TOOL ?= $(notdir $(CURDIR))
+
+# Абсолютные пути — рецепты работают из любого cwd
+SRC_DIR = $(ROOT)/src/$(TOOL)
+COMMON_DIR = $(ROOT)/src/common
+BUILD_DIR = $(ROOT)/build/$(TOOL)
+
+TARGET = $(BUILD_DIR)/$(TOOL)
+# COMMON_OBJS: списки объектников общего кода, по одному .o на каждый .c из common/.
+# $(@D) — каталог цели (build/<tool>/common/), генерируется mkdir -p.
+# Пример (для TOOL=watermelon-ps, common/{hello.c,util.c}):
+#   $(COMMON_DIR)          -> /…/src/common
+#   $(wildcard .../*.c)    -> /…/src/common/hello.c /…/src/common/util.c
+#   $(patsubst ...)        -> /…/build/watermelon-ps/common/hello.o
+#                            /…/build/watermelon-ps/common/util.o
+COMMON_OBJS = $(patsubst $(COMMON_DIR)/%.c,$(BUILD_DIR)/common/%.o,$(wildcard $(COMMON_DIR)/*.c))
+
+all: $(TARGET)
+
+# Правило-шаблон: любой ../common/*.c -> build/<tool>/common/*.o.
+# Срабатывает по каждому .o из COMMON_OBJS. Автоматические переменные:
+#   $@ — цель (/…/build/<tool>/common/hello.o)
+#   $< — первый/единственный пререквизит (/…/src/common/hello.c)
+#   $(@D) — каталог цели (/…/build/<tool>/common)
+# Пример запуска команды:
+#   mkdir -p /…/build/watermelon-ps/common
+#   gcc -Wall -Wextra -g -I/…/src/common -c /…/src/common/hello.c \
+#     -o /…/build/watermelon-ps/common/hello.o
+$(BUILD_DIR)/common/%.o: $(COMMON_DIR)/%.c
+	mkdir -p $(@D)
+	$(CC) $(CFLAGS) -I$(COMMON_DIR) -c $< -o $@
+
+# Правило сборки утилиты: main.c + все общие объектники -> один бинарь.
+# Пересобирается, если изменился main.c или любой .o из COMMON_OBJS.
+# Автоматические переменные:
+#   $@ — цель (/…/build/watermelon-ps/watermelon-ps)
+#   $< — первый пререквизит (/…/src/watermelon-ps/main.c)
+# Пример запуска команды:
+#   gcc -Wall -Wextra -g -I/…/src/common -o /…/build/watermelon-ps/watermelon-ps \
+#     /…/src/watermelon-ps/main.c /…/build/watermelon-ps/common/hello.o
+$(TARGET): $(SRC_DIR)/main.c $(COMMON_OBJS)
+	mkdir -p $(@D)
+	$(CC) $(CFLAGS) -I$(COMMON_DIR) -o $@ $< $(COMMON_OBJS)
+
+run: $(TARGET)
+	$(TARGET)
+
+clean:
+	rm -rf $(BUILD_DIR)
+
+.PHONY: all run clean

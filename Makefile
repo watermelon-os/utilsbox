@@ -27,7 +27,27 @@ TOOL ?= $(firstword $(TOOLS))
 run: $(BUILD_DIR)/$(TOOL)
 	$(BUILD_DIR)/$(TOOL)
 
+
+TOPDIR  := $(CURDIR)/.rpmbuild   # свой топдир на проект
+SPEC    := $(NAME).spec
+
+rpm: $(TARGETS)
+	# компиляция
+	# подготовка топдир
+	# именованный перенос спеки, бинарного файла в сурс и других файлов для установки
+	# запуск рпмбилд
+
 clean:
 	rm -rf $(BUILD_DIR)
 
-.PHONY: all run clean
+.PHONY: all run clean fff/cc/ww.a fff/cc/ww.b
+
+%.fo: %.a %.b
+	@echo $^ 
+	@echo $@
+	@echo $<
+	@echo $*
+
+print:
+	@echo $(TOOLS)
+	@echo $(TARGETS)

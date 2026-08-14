@@ -24,7 +24,7 @@ $(BUILD_DIR)/%: $(SRC_DIR)/%/main.c $(COMMON_OBJS)
 
 
 NAME    := myapp
-VERSION := $(subst  dirty,$(shell date +%Y%m%d%H%M),$(subst heads/,,$(shell git describe --all --dirty))) # коммит, а если dirty то комит и время сборки
+VERSION := $(subst dirty,$(shell date +%Y%m%d%H%M),$(shell git describe --always --dirty)) # хеш коммита; если дерево грязное — хеш + время сборки
 TOPDIR  := $(CURDIR)/.rpmbuild   # свой топдир на проект
 SPEC    := $(NAME).spec
 

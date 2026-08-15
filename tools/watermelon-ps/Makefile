@@ -110,7 +110,8 @@ uninstall:
 MKTEMP_TEMP := /tmp/edutoolsdist.XXX
 clean:
 	rm -rf $(BUILD_DIR)
-	rm -rf /tmp/$(subst XXX,*,$(MKTEMP_TEMP))
+	rm -rf $(subst XXX,*,$(MKTEMP_TEMP))
+	rm -rf $(RPMBUILD_DIR)/{RPMS/x86_64,SOURCES}/$(NAME)*
 
 DIST_TAR_TMP_DIR = $(shell mktemp -d)
 dist: $(BUILD_DIR)/$(NAME)

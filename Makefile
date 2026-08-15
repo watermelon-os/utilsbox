@@ -1,29 +1,34 @@
-CC = gcc
-CFLAGS = -Wall -Wextra -g
-
-SRC_DIR = src
-COMMON_DIR = $(SRC_DIR)/common
-BUILD_DIR = .build
+# Проектный Makefile: делегирует сборку в Makefile каждого тула.
+# Тулзовый Makefile умеет работать сам по себе из своей поддиректории,
+# а здесь ему переопределяется BUILD_DIR, чтобы всё клалось в .build/ проекта.
 
 TOOLS = watermelon-ps
-TARGETS = $(addprefix $(BUILD_DIR)/,$(TOOLS))
 
-COMMON_OBJS = $(BUILD_DIR)/common/hello.o
+BUILD_DIR = .build
+SRC_DIR = tools
 
-all: $(TARGETS)
+all: $(addprefix all-,$(TOOLS))
 
-# общий код: common/*.c -> build/common/*.o
-$(BUILD_DIR)/common/%.o: $(COMMON_DIR)/%.c
-	mkdir -p $(@D)
-	$(CC) $(CFLAGS) -I$(COMMON_DIR) -c $< -o $@
+install: $(addprefix install-,$(TOOLS))
 
-# утилита: main.c + общие объектники
-$(BUILD_DIR)/%: $(SRC_DIR)/%/main.c $(COMMON_OBJS)
-	mkdir -p $(@D)
-	$(CC) $(CFLAGS) -I$(COMMON_DIR) -o $@ $< $(COMMON_OBJS)
+uninstall: $(addprefix uninstall-,$(TOOLS))
+
+clean: $(addprefix clean-,$(TOOLS))
+
+all-%:
+	$(MAKE) -C $(SRC_DIR)/$* BUILD_DIR=$(CURDIR)/$(BUILD_DIR)/$*
+
+install-%:
+	$(MAKE) -C $(SRC_DIR)/$* install BUILD_DIR=$(CURDIR)/$(BUILD_DIR)/$*
+
+uninstall-%:
+	$(MAKE) -C $(SRC_DIR)/$* uninstall BUILD_DIR=$(CURDIR)/$(BUILD_DIR)/$*
+
+clean-%:
+	$(MAKE) -C $(SRC_DIR)/$* clean BUILD_DIR=$(CURDIR)/$(BUILD_DIR)/$*
 
 
-PKG_VERSION := $(subst dirty,$(shell date +%Y%m%d%H%M),$(shell git describe --always --dirty)) # хеш коммита; если дерево грязное — хеш + время сборки
+PKG_VERSION := $(subst dirty,$(shell date +%Y%m%d%H%M),$(shell git describe --always --dirty))
 PKG_RPM_TOPDIR  := $(CURDIR)/.rpmbuild
 PKG_RPM_BUILDDIR := $(PKG_RPM_TOPDIR)/BUILD
 PKG_RPM_BUILDROOTDIR := $(PKG_RPM_TOPDIR)/BUILDROOT
@@ -32,14 +37,9 @@ PKG_RPM_SPECSDIR := $(PKG_RPM_TOPDIR)/SPECS
 PKG_RPM_RPMSDIR := $(PKG_RPM_TOPDIR)/RPMS
 PKG_RPM_SRPMSDIR := $(PKG_RPM_TOPDIR)/SRPMS
 
-PKG_RPM_SPECSSRC    := $(foreach t,$(TOOLS),$(CURDIR)/$(SRC_DIR)/$(t)/$(t).spec)
+PKG_RPM_SPECSSRC := $(foreach t,$(TOOLS),$(CURDIR)/$(SRC_DIR)/$(t)/$(t).spec)
 
-
-DISTS := $(foreach t,$(TOOLS),$(PKG_RPM_BUILDDIR)/$(t)-$(PKG_VERSION))
-
-
-# SPEC    := $(NAME).spec
-rpm: $(TARGETS)
+rpm: all
 	@mkdir -p $(PKG_RPM_BUILDDIR) \
 		$(PKG_RPM_BUILDROOTDIR) \
 		$(PKG_RPM_SOURCESDIR) \
@@ -47,29 +47,12 @@ rpm: $(TARGETS)
 		$(PKG_RPM_RPMSDIR) \
 		$(PKG_RPM_SRPMSDIR)
 	@for t in $(TOOLS); do \
-		cp $(BUILD_DIR)/$$t $(PKG_RPM_BUILDDIR)/$$t-$(PKG_VERSION); \
+		cp $(CURDIR)/$(BUILD_DIR)/$$t $(PKG_RPM_BUILDDIR)/$$t-$(PKG_VERSION); \
 	done
 	@for s in $(PKG_RPM_SPECSSRC); do \
 		cp $$s $(PKG_RPM_SPECSDIR)/$$(basename $$s); \
 	done
-	@for spec in $(PKG_RPM_SPECSDIR)/*.spec; do \
-		echo "$$spec"; \
-	done
 # 	rpmbuild --define '_topdir $(PKG_RPM_TOPDIR)' -bb $(SPEC)
 
-	# именованный перенос спеки, бинарного файла в сурс и других файлов для установки
-	# запуск рпмбилд
-
-clean:
-	rm -rf $(BUILD_DIR)
-
-.PHONY: all run clean rpm print
-
-print:
-	@echo $(CURDIR)
-	@echo $(DISTS)
-	@echo $(PKG_RPM_SPECSSRC)
-	@for s in $(PKG_RPM_SPECSSRC); do \
-		echo $$s $(PKG_RPM_SPECSDIR)/$$(basename $$s); \
-	done
-	
+.PHONY: all install uninstall clean rpm \
+	all-% install-% uninstall-% clean-%

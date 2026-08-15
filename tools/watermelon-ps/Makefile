@@ -88,6 +88,15 @@ $(BUILD_DIR)/$(NAME): $(TOOL_DIR)/main.c $(HELLO_OBJ)
 	mkdir -p $(@D)
 	$(CC) $(CFLAGS) -I$(COMMON_DIR) -o $@ $< $(HELLO_OBJ)
 
+# Release-сборка для пакета: -O2, затем strip убирает debug-инфу.
+RELEASE_CFLAGS = $(CFLAGS) -O2
+RELEASE_BIN = $(BUILD_DIR)/$(NAME)-release
+
+$(RELEASE_BIN): $(TOOL_DIR)/main.c $(HELLO_OBJ)
+	mkdir -p $(@D)
+	$(CC) $(RELEASE_CFLAGS) -I$(COMMON_DIR) -o $@ $< $(HELLO_OBJ)
+	strip $@
+
 # Внутри распакованного tar (rpmbuild) файлы лежат плоско в cwd, в дереве исходников —
 # в TOOL_DIR/BUILD_DIR. $(or $(wildcard ...)) берёт то, что реально есть на месте.
 BIN := $(or $(wildcard $(NAME)),$(BUILD_DIR)/$(NAME))
@@ -114,13 +123,13 @@ clean:
 	rm -rf $(RPMBUILD_DIR)/{RPMS/x86_64,SOURCES,SPECS}/$(NAME)*
 
 DIST_TAR_TMP_DIR = $(shell mktemp -d)
-dist: $(BUILD_DIR)/$(NAME)
+dist: $(RELEASE_BIN)
 	$(eval TEMP_DIR := $(shell mktemp -d $(MKTEMP_TEMP)))
 	$(eval TAR_TEMP_DIR := $(TEMP_DIR)/$(NAMEVER))
 	mkdir -p $(RPMBUILD_DIR)/{SPECS,SOURCES} \
 		$(TAR_TEMP_DIR)
 	# поместить в плоскую структуру файлы для архива
-	cp -f $(BUILD_DIR)/$(NAME) $(TAR_TEMP_DIR)/
+	cp -f $(RELEASE_BIN) $(TAR_TEMP_DIR)/$(NAME)
 	cp -f $(TOOL_DIR)/LICENSE $(TAR_TEMP_DIR)/
 	cp -f $(TOOL_DIR)/$(NAME).1 $(TAR_TEMP_DIR)/
 	cp -f $(TOOL_DIR)/Makefile $(TAR_TEMP_DIR)/

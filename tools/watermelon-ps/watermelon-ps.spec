@@ -9,7 +9,7 @@ Release: %{package_release}
 Summary: watermelon-ps, вывод снимка статуса процессов
 License: MIT
 
-URL: https://github.com/dsaime/linux-tools-edu/%{name}
+URL: https://github.com/dsaime/linux-tools-edu/tree/master/tools/%{name}
 # Source: https://github.com/dsaime/linux-tools-edu/%{name}/releases/download/%{version}/%{name}-%{version}.tar.gz
 Source: %{name}-%{version}.tar.gz
 
@@ -28,15 +28,12 @@ watermelon-ps это утилита для вывода снимка стату�
 %setup
 
 %build
-make NE_GLOBAL_DIR=%{_datadir}/ne
+# tar.gz уже с подготовленным bin
 
 %install
 %make_install
 
 %files
-%{_bindir}/bin/%{name}
-%{_datadir}/%{name}/
-%{_mandir}/man1/%{name}.1*
-
-%files doc
-%license ./LICENSE
+%{_bindir}/%{name}
+%{_mandir}/man1/%{name}.1
+%license %{_licensedir}/%{name}/LICENSE

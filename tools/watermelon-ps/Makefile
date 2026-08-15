@@ -25,7 +25,7 @@ CFLAGS += -DVERSION=\"$(VERSION)\"
 # Мотивация: единый источник истины — имя не дублируется текстом по всему Makefile,
 # переименование/перенос утилиты = правка одной строки. Также даёт подсказку сборщику пакета.
 NAME = watermelon-ps
-# NAMEVER = $(NAME)-$(VERSION)
+NAMEVER = $(NAME)-$(VERSION)
 
 # TOOL_DIR — каталог исходников этой утилиты (относительно корня проекта).
 TOOL_DIR = tools/$(NAME)
@@ -96,22 +96,37 @@ uninstall:
 	rm -f $(DESTDIR)$(docdir)/LICENSE
 	rmdir --ignore-fail-on-non-empty $(DESTDIR)$(docdir)
 
+MKTEMP_TEMP := /tmp/edutoolsdist.XXX
 clean:
 	rm -rf $(BUILD_DIR)
+	rm -rf /tmp/$(subst XXX,*,$(MKTEMP_TEMP))
 
+DIST_TAR_TMP_DIR = $(shell mktemp -d)
 dist: $(BUILD_DIR)/$(NAME)
-	mkdir -p $(RPMBUILD_DIR)/{SPECS,SOURCES}
-	tar -czf $(RPMBUILD_DIR)/SOURCES/$(NAME)-$(VERSION).tar.gz \
-		$(BUILD_DIR)/$(NAME) \
-		$(TOOL_DIR)/LICENSE \
-		$(TOOL_DIR)/$(NAME).1 \
-		$(TOOL_DIR)/Makefile
-	# git archive --format=tar.gz --prefix=$(NAME)-$(VERSION)/ HEAD > $(RPMBUILD_DIR)/SOURCES/$(NAME)-$(VERSION).tar.gz
+	$(eval TEMP_DIR := $(shell mktemp -d $(MKTEMP_TEMP)))
+	$(eval TAR_TEMP_DIR := $(TEMP_DIR)/$(NAMEVER))
+	mkdir -p $(RPMBUILD_DIR)/{SPECS,SOURCES} \
+		$(TAR_TEMP_DIR)
+	# поместить в плоскую структуру файлы для архива
+	cp -f $(BUILD_DIR)/$(NAME) $(TAR_TEMP_DIR)/
+	cp -f $(TOOL_DIR)/LICENSE $(TAR_TEMP_DIR)/
+	cp -f $(TOOL_DIR)/$(NAME).1 $(TAR_TEMP_DIR)/
+	cp -f $(TOOL_DIR)/Makefile $(TAR_TEMP_DIR)/
+
+	# создать архив из временной плоской структуры
+	tar -czf $(RPMBUILD_DIR)/SOURCES/$(NAMEVER).tar.gz \
+		-C $(TEMP_DIR) $(NAMEVER)
+	rm -rf $(TAR_TEMP_DIR)
+
 	cp -u $(TOOL_DIR)/$(NAME).spec $(RPMBUILD_DIR)/SPECS/$(NAME).spec
 
 rpm: dist
 	rpmbuild -bb $(RPMBUILD_DIR)/SPECS/$(NAME).spec \
 		--define "package_version $(VERSION)" \
 		--defiene "_topdir $(RPMBUILD_DIR)"
+
+print:
+	@echo $(DIST_TAR_TMP_DIR)
+	@echo $(subst XXX,*,$(MKTEMP_TEMP))
 
 .PHONY: all install uninstall clean dist rpm

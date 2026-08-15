@@ -23,31 +23,53 @@ $(BUILD_DIR)/%: $(SRC_DIR)/%/main.c $(COMMON_OBJS)
 	$(CC) $(CFLAGS) -I$(COMMON_DIR) -o $@ $< $(COMMON_OBJS)
 
 
-NAME    := myapp
-VERSION := $(subst dirty,$(shell date +%Y%m%d%H%M),$(shell git describe --always --dirty)) # хеш коммита; если дерево грязное — хеш + время сборки
-TOPDIR  := $(CURDIR)/.rpmbuild   # свой топдир на проект
-SPEC    := $(NAME).spec
+PKG_VERSION := $(subst dirty,$(shell date +%Y%m%d%H%M),$(shell git describe --always --dirty)) # хеш коммита; если дерево грязное — хеш + время сборки
+PKG_RPM_TOPDIR  := $(CURDIR)/.rpmbuild
+PKG_RPM_BUILDDIR := $(PKG_RPM_TOPDIR)/BUILD
+PKG_RPM_BUILDROOTDIR := $(PKG_RPM_TOPDIR)/BUILDROOT
+PKG_RPM_SOURCESDIR := $(PKG_RPM_TOPDIR)/SOURCES
+PKG_RPM_SPECSDIR := $(PKG_RPM_TOPDIR)/SPECS
+PKG_RPM_RPMSDIR := $(PKG_RPM_TOPDIR)/RPMS
+PKG_RPM_SRPMSDIR := $(PKG_RPM_TOPDIR)/SRPMS
+
+PKG_RPM_SPECSSRC    := $(foreach t,$(TOOLS),$(CURDIR)/$(SRC_DIR)/$(t)/$(t).spec)
 
 
-$(DIST):
-	mkdir -p $(TOPDIR)/{BUILD,BUILDROOT,SOURCES,SPECS,RPMS,SRPMS}
-	git archive --format=tar --prefix=$(NAME)-$(VERSION)/ HEAD > $@
-	cp $(SPEC) $(TOPDIR)/SPECS/
+DISTS := $(foreach t,$(TOOLS),$(PKG_RPM_BUILDDIR)/$(t)-$(PKG_VERSION))
 
 
 # SPEC    := $(NAME).spec
 rpm: $(TARGETS)
+	@mkdir -p $(PKG_RPM_BUILDDIR) \
+		$(PKG_RPM_BUILDROOTDIR) \
+		$(PKG_RPM_SOURCESDIR) \
+		$(PKG_RPM_SPECSDIR) \
+		$(PKG_RPM_RPMSDIR) \
+		$(PKG_RPM_SRPMSDIR)
+	@for t in $(TOOLS); do \
+		cp $(BUILD_DIR)/$$t $(PKG_RPM_BUILDDIR)/$$t-$(PKG_VERSION); \
+	done
+	@for s in $(PKG_RPM_SPECSSRC); do \
+		cp $$s $(PKG_RPM_SPECSDIR)/$$(basename $$s); \
+	done
+	@for spec in $(PKG_RPM_SPECSDIR)/*.spec; do \
+		echo "$$spec"; \
+	done
+# 	rpmbuild --define '_topdir $(PKG_RPM_TOPDIR)' -bb $(SPEC)
 
-	# компиляция
-	# подготовка топдир
 	# именованный перенос спеки, бинарного файла в сурс и других файлов для установки
 	# запуск рпмбилд
 
 clean:
 	rm -rf $(BUILD_DIR)
 
-.PHONY: all run clean
+.PHONY: all run clean rpm print
 
 print:
 	@echo $(CURDIR)
-	@echo $(VERSION)
+	@echo $(DISTS)
+	@echo $(PKG_RPM_SPECSSRC)
+	@for s in $(PKG_RPM_SPECSSRC); do \
+		echo $$s $(PKG_RPM_SPECSDIR)/$$(basename $$s); \
+	done
+	

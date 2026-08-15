@@ -136,9 +136,11 @@ rpm: dist
 	rpmbuild -bb $(RPMBUILD_DIR)/SPECS/$(NAME).spec \
 		--define "package_version $(VERSION)" \
 		--define "_topdir $(CURDIR)/$(RPMBUILD_DIR)"
+	rpm --addsign $(RPMBUILD_DIR)/RPMS/*/$(NAMEVER)*.rpm
 
 print:
 	@echo $(DIST_TAR_TMP_DIR)
 	@echo $(subst XXX,*,$(MKTEMP_TEMP))
+	echo $(RPMBUILD_DIR)/RPMS/*/$(NAMEVER)*.rpm
 
 .PHONY: all install uninstall clean dist rpm

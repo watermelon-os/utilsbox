@@ -111,7 +111,7 @@ MKTEMP_TEMP := /tmp/edutoolsdist.XXX
 clean:
 	rm -rf $(BUILD_DIR)
 	rm -rf $(subst XXX,*,$(MKTEMP_TEMP))
-	rm -rf $(RPMBUILD_DIR)/{RPMS/x86_64,SOURCES}/$(NAME)*
+	rm -rf $(RPMBUILD_DIR)/{RPMS/x86_64,SOURCES,SPECS}/$(NAME)*
 
 DIST_TAR_TMP_DIR = $(shell mktemp -d)
 dist: $(BUILD_DIR)/$(NAME)

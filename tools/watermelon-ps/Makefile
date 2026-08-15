@@ -16,7 +16,9 @@ CFLAGS = -Wall -Wextra -g
 # и Version в спеке, и -DVERSION при компиляции; они не разъезжаются.
 # VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo 0.0.0-unknown)
 
-VERSION = 20260815-0.1
+# ВАЖНО: в RPM Version запрещён '-' (0x2d) — он служит разделителем Version/Release.
+# Дату сборки в Version не вносим; за ней (при желании) следит Release.
+VERSION = 0.1
 
 # Версия попадает в бинарь на этапе компиляции через макрос VERSION.
 CFLAGS += -DVERSION=\"$(VERSION)\"
@@ -66,8 +68,10 @@ datarootdir = $(prefix)/share
 mandir      = $(datarootdir)/man
 # man1dir — man-страницы раздела 1 (команды).
 man1dir     = $(mandir)/man1
-# docdir — документация и лицензия именно этой утилиты.
+# docdir — документация именно этой утилиты.
 docdir      = $(datarootdir)/doc/$(NAME)
+# licensdir — лицензия (соглашение Fedora: /usr/share/licenses/<name>).
+licensdir   = $(datarootdir)/licenses/$(NAME)
 
 # DESTDIR — не объявляется здесь (это не наша переменная), а передаётся извне.
 # Мотивация: стандартный механизм staging-установки — устанавливать не в корень ФС,
@@ -84,17 +88,24 @@ $(BUILD_DIR)/$(NAME): $(TOOL_DIR)/main.c $(HELLO_OBJ)
 	mkdir -p $(@D)
 	$(CC) $(CFLAGS) -I$(COMMON_DIR) -o $@ $< $(HELLO_OBJ)
 
-install: all
-	install -d $(DESTDIR)$(bindir) $(DESTDIR)$(man1dir) $(DESTDIR)$(docdir)
-	install -m 755 $(BUILD_DIR)/$(NAME) $(DESTDIR)$(bindir)/$(NAME)
-	install -m 644 $(TOOL_DIR)/$(NAME).1 $(DESTDIR)$(man1dir)/$(NAME).1
-	install -m 644 $(TOOL_DIR)/LICENSE $(DESTDIR)$(docdir)/LICENSE
+# Внутри распакованного tar (rpmbuild) файлы лежат плоско в cwd, в дереве исходников —
+# в TOOL_DIR/BUILD_DIR. $(or $(wildcard ...)) берёт то, что реально есть на месте.
+BIN := $(or $(wildcard $(NAME)),$(BUILD_DIR)/$(NAME))
+MAN := $(or $(wildcard $(NAME).1),$(TOOL_DIR)/$(NAME).1)
+LIC := $(or $(wildcard LICENSE),$(TOOL_DIR)/LICENSE)
+
+# install не зависит от all: при сборке rpm бинарь уже в tar и пересборка не нужна.
+install:
+	install -d $(DESTDIR)$(bindir) $(DESTDIR)$(man1dir) $(DESTDIR)$(docdir) $(DESTDIR)$(licensdir)
+	install -m 755 $(BIN) $(DESTDIR)$(bindir)/$(NAME)
+	install -m 644 $(MAN) $(DESTDIR)$(man1dir)/$(NAME).1
+	install -m 644 $(LIC) $(DESTDIR)$(licensdir)/LICENSE
 
 uninstall:
 	rm -f $(DESTDIR)$(bindir)/$(NAME)
 	rm -f $(DESTDIR)$(man1dir)/$(NAME).1
-	rm -f $(DESTDIR)$(docdir)/LICENSE
-	rmdir --ignore-fail-on-non-empty $(DESTDIR)$(docdir)
+	rm -f $(DESTDIR)$(licensdir)/LICENSE
+	rmdir --ignore-fail-on-non-empty $(DESTDIR)$(licensdir) $(DESTDIR)$(docdir)
 
 MKTEMP_TEMP := /tmp/edutoolsdist.XXX
 clean:
@@ -123,7 +134,7 @@ dist: $(BUILD_DIR)/$(NAME)
 rpm: dist
 	rpmbuild -bb $(RPMBUILD_DIR)/SPECS/$(NAME).spec \
 		--define "package_version $(VERSION)" \
-		--defiene "_topdir $(RPMBUILD_DIR)"
+		--define "_topdir $(CURDIR)/$(RPMBUILD_DIR)"
 
 print:
 	@echo $(DIST_TAR_TMP_DIR)

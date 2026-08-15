@@ -13,7 +13,7 @@ URL: https://github.com/dsaime/linux-tools-edu/tree/master/tools/%{name}
 # Source: https://github.com/dsaime/linux-tools-edu/%{name}/releases/download/%{version}/%{name}-%{version}.tar.gz
 Source: %{name}-%{version}.tar.gz
 
-BuildRequires: gcc
+# BuildRequires: gcc
 BuildRequires: make
 BuildRequires: bash
 
@@ -31,9 +31,11 @@ watermelon-ps это утилита для вывода снимка стату�
 # tar.gz уже с подготовленным bin
 
 %install
-%make_install
+# %make_install = make install DESTDIR=%{buildroot}. prefix передаём явно,
+# иначе Makefile по умолчанию поставит в /usr/local, а %files ждёт /usr.
+%make_install prefix=%{_prefix}
 
 %files
 %{_bindir}/%{name}
-%{_mandir}/man1/%{name}.1
+%{_mandir}/man1/%{name}.1*
 %license %{_licensedir}/%{name}/LICENSE

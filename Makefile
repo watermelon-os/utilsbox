@@ -1,6 +1,5 @@
-# Проектный Makefile: делегирует сборку в Makefile каждого тула.
-# Тулзовый Makefile умеет работать сам по себе из своей поддиректории,
-# а здесь ему переопределяется BUILD_DIR, чтобы всё клалось в .build/ проекта.
+# Проектный Makefile: делегирует сборку в Makefile каждого тула через -f,
+# чтобы cwd оставался корнем проекта. Тулзовые Makefile всегда запускаются из корня.
 
 TOOLS = watermelon-ps
 
@@ -16,16 +15,16 @@ uninstall: $(addprefix uninstall-,$(TOOLS))
 clean: $(addprefix clean-,$(TOOLS))
 
 all-%:
-	$(MAKE) -C $(SRC_DIR)/$* BUILD_DIR=$(CURDIR)/$(BUILD_DIR)/$*
+	$(MAKE) -f $(SRC_DIR)/$*/Makefile BUILD_DIR=$(CURDIR)/$(BUILD_DIR)/$*
 
 install-%:
-	$(MAKE) -C $(SRC_DIR)/$* install BUILD_DIR=$(CURDIR)/$(BUILD_DIR)/$*
+	$(MAKE) -f $(SRC_DIR)/$*/Makefile install BUILD_DIR=$(CURDIR)/$(BUILD_DIR)/$*
 
 uninstall-%:
-	$(MAKE) -C $(SRC_DIR)/$* uninstall BUILD_DIR=$(CURDIR)/$(BUILD_DIR)/$*
+	$(MAKE) -f $(SRC_DIR)/$*/Makefile uninstall BUILD_DIR=$(CURDIR)/$(BUILD_DIR)/$*
 
 clean-%:
-	$(MAKE) -C $(SRC_DIR)/$* clean BUILD_DIR=$(CURDIR)/$(BUILD_DIR)/$*
+	$(MAKE) -f $(SRC_DIR)/$*/Makefile clean BUILD_DIR=$(CURDIR)/$(BUILD_DIR)/$*
 
 
 PKG_VERSION := $(subst dirty,$(shell date +%Y%m%d%H%M),$(shell git describe --always --dirty))

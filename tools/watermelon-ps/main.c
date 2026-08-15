@@ -10,6 +10,10 @@
 
 #include "hello.h"
 
+#ifndef VERSION
+#define VERSION "unknown"
+#endif
+
 int *get_all_pids(int *pids_count) {
   int *pids = NULL;
   DIR *dir = opendir("/proc");
@@ -172,6 +176,7 @@ int main(int argc, char **argv) {
 
   int pids_count;
   get_all_pids(&pids_count);
+  printf("%s %s\n", "watermelon-ps", VERSION);
   printf("количество процессов сейчас %d\n", pids_count);
 
   int n;

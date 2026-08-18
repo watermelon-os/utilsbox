@@ -1,6 +1,4 @@
-# Makefile утилиты. ВСЕГДА запускается из корня проекта (make -f tools/watermelon-ps/Makefile)
-# или через корневой Makefile. Запуск из собственной поддиректории не поддерживается:
-# все пути ниже — относительно корня проекта (cwd).
+.PHONY: all install uninstall clean dist rpm
 
 # CC/CFLAGS — стандартные имена make (часть соглашения GNU make, не проект-специфичные).
 # Мотивация: одинаковые имена в любом проекте = одинаковые способы переопределения
@@ -29,14 +27,11 @@ CFLAGS += -DVERSION=\"$(VERSION)\"
 NAME = watermelon-ps
 NAMEVER = $(NAME)-$(VERSION)
 
-# TOOL_DIR — каталог исходников этой утилиты (относительно корня проекта).
-TOOL_DIR = tools/$(NAME)
-
 # BUILD_DIR — куда кладутся результаты сборки.
 # Мотивация: (1) сборка вне каталога исходников — чисто и легко чистить (make clean);
 # (2) главное — переменная переопределяется проектным Makefile через командную строку,
 #     чтобы собирать в корневой .build/, а не в локальной подпапке.
-BUILD_DIR = .build/$(NAME)
+BUILD_DIR = .build
 
 RPMBUILD_DIR = .rpmbuild
 
@@ -58,7 +53,7 @@ $(BUILD_DIR)/common/hello.o: $(COMMON_DIR)/hello.c
 	mkdir -p $(@D)
 	$(CC) $(CFLAGS) -I$(COMMON_DIR) -c $< -o $@
 
-$(BUILD_DIR)/$(NAME): $(TOOL_DIR)/main.c $(HELLO_OBJ)
+$(BUILD_DIR)/$(NAME): main.c $(HELLO_OBJ)
 	mkdir -p $(@D)
 	$(CC) $(CFLAGS) -I$(COMMON_DIR) -o $@ $< $(HELLO_OBJ)
 
@@ -66,28 +61,27 @@ $(BUILD_DIR)/$(NAME): $(TOOL_DIR)/main.c $(HELLO_OBJ)
 RELEASE_CFLAGS = $(CFLAGS) -O2
 RELEASE_BIN = $(BUILD_DIR)/$(NAME)-release
 
-$(RELEASE_BIN): $(TOOL_DIR)/main.c $(HELLO_OBJ)
+$(RELEASE_BIN): main.c $(HELLO_OBJ)
 	mkdir -p $(@D)
 	$(CC) $(RELEASE_CFLAGS) -I$(COMMON_DIR) -o $@ $< $(HELLO_OBJ)
 	strip $@
 
 # Внутри распакованного tar (rpmbuild) файлы лежат плоско в cwd, в дереве исходников —
-# в TOOL_DIR/BUILD_DIR. $(or $(wildcard ...)) берёт то, что реально есть на месте.
+# в BUILD_DIR. $(or $(wildcard ...)) берёт то, что реально есть на месте.
 BIN := $(or $(wildcard $(NAME)),$(BUILD_DIR)/$(NAME))
-MAN := $(or $(wildcard $(NAME).1),$(TOOL_DIR)/$(NAME).1)
-LIC := $(or $(wildcard LICENSE),$(TOOL_DIR)/LICENSE)
+MAN := $(or $(wildcard $(NAME).1),$(NAME).1)
+LIC := $(or $(wildcard LICENSE),LICENSE)
 
 # install не зависит от all: при сборке rpm бинарь уже в tar и пересборка не нужна.
 install:
-	install -d $(bindir) $(man1dir) $(docdir) $(licensdir)
 	install -m 755 $(BIN) $(bindir)/$(NAME)
 	install -m 644 $(MAN) $(man1dir)/$(NAME).1
 	install -m 644 $(LIC) $(licensdir)/LICENSE
 
 uninstall:
-	rm -f $(bindir)/$(NAME)
-	rm -f $(man1dir)/$(NAME).1
-	rm -f $(licensdir)/LICENSE
+	rm -f $(bindir)/$(NAME) \
+		$(man1dir)/$(NAME).1 \
+		$(licensdir)/LICENSE
 	rmdir --ignore-fail-on-non-empty $(licensdir) $(docdir)
 
 MKTEMP_TEMP := /tmp/edutoolsdist.XXX
@@ -104,16 +98,16 @@ dist: $(RELEASE_BIN)
 		$(TAR_TEMP_DIR)
 	# поместить в плоскую структуру файлы для архива
 	cp -f $(RELEASE_BIN) $(TAR_TEMP_DIR)/$(NAME)
-	cp -f $(TOOL_DIR)/LICENSE $(TAR_TEMP_DIR)/
-	cp -f $(TOOL_DIR)/$(NAME).1 $(TAR_TEMP_DIR)/
-	cp -f $(TOOL_DIR)/Makefile $(TAR_TEMP_DIR)/
+	cp -f LICENSE $(TAR_TEMP_DIR)/
+	cp -f $(NAME).1 $(TAR_TEMP_DIR)/
+	cp -f Makefile $(TAR_TEMP_DIR)/
 
 	# создать архив из временной плоской структуры
 	tar -czf $(RPMBUILD_DIR)/SOURCES/$(NAMEVER).tar.gz \
 		-C $(TEMP_DIR) $(NAMEVER)
 	rm -rf $(TAR_TEMP_DIR)
 
-	cp -u $(TOOL_DIR)/$(NAME).spec $(RPMBUILD_DIR)/SPECS/$(NAME).spec
+	cp -u $(NAME).spec $(RPMBUILD_DIR)/SPECS/$(NAME).spec
 
 rpm: dist
 	rpmbuild -bb $(RPMBUILD_DIR)/SPECS/$(NAME).spec \
@@ -126,5 +120,3 @@ print:
 	@echo $(subst XXX,*,$(MKTEMP_TEMP))
 	echo $(RPMBUILD_DIR)/RPMS/*/$(NAMEVER)*.rpm
 	@echo $(licensdir)
-
-.PHONY: all install uninstall clean dist rpm

@@ -27,7 +27,7 @@ docdir      = $(datarootdir)/doc/$(NAME)
 # licensdir — лицензия (соглашение Fedora: /usr/share/licenses/<name>).
 licensdir   = $(datarootdir)/licenses/$(NAME)
 # node_modulesdir — системный каталог Node.js-пакетов.
-node_modulesdir = $(libdir)/node_modules
+node_modulesdir = $(libdir)/node_modules/$(NAME)
 
 
 # mandir — man-страницы.

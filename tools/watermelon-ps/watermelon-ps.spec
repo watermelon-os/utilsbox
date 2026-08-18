@@ -17,6 +17,7 @@ Source: %{name}-%{version}.tar.gz
 BuildRequires: make
 BuildRequires: bash
 
+
 # BuildArch: x86_64 aarch64
 BuildArch: x86_64
 

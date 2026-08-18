@@ -74,15 +74,15 @@ LIC := $(or $(wildcard LICENSE),LICENSE)
 
 # install не зависит от all: при сборке rpm бинарь уже в tar и пересборка не нужна.
 install:
-	install -m 755 $(BIN) $(bindir)/$(NAME)
-	install -m 644 $(MAN) $(man1dir)/$(NAME).1
-	install -m 644 $(LIC) $(licensdir)/LICENSE
+	install -m 755 $(BIN) $(DESTDIR)$(bindir)/$(NAME)
+	install -m 644 $(MAN) $(DESTDIR)$(man1dir)/$(NAME).1
+	install -m 644 $(LIC) $(DESTDIR)$(licensdir)/LICENSE
 
 uninstall:
-	rm -f $(bindir)/$(NAME) \
-		$(man1dir)/$(NAME).1 \
-		$(licensdir)/LICENSE
-	rmdir --ignore-fail-on-non-empty $(licensdir) $(docdir)
+	rm -f $(DESTDIR)$(bindir)/$(NAME) \
+		$(DESTDIR)$(man1dir)/$(NAME).1 \
+		$(DESTDIR)$(licensdir)/LICENSE
+	rmdir --ignore-fail-on-non-empty $(DESTDIR)$(licensdir) $(DESTDIR)$(docdir)
 
 MKTEMP_TEMP := /tmp/edutoolsdist.XXX
 clean:
@@ -119,4 +119,4 @@ print:
 	@echo $(DIST_TAR_TMP_DIR)
 	@echo $(subst XXX,*,$(MKTEMP_TEMP))
 	echo $(RPMBUILD_DIR)/RPMS/*/$(NAMEVER)*.rpm
-	@echo $(licensdir)
+	@echo $(DESTDIR)$(licensdir)

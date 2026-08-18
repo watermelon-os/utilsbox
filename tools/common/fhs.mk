@@ -13,14 +13,16 @@ exec_prefix = $(prefix)
 # DESTDIR — не объявляется здесь (это не наша переменная), а передаётся извне.
 # Мотивация: стандартный механизм staging-установки — устанавливать не в корень ФС,
 # а в $DESTDIR<путь>, чтобы потом упаковать в rpm/deb/т.п. без прав root.
-# Работает из-за того, что в правилах install пути написаны как $(DESTDIR)$(DESTDIR)$(bindir) и т.д.
+# Работает из-за того, что в правилах install пути написаны как $(DESTDIR)$(bindir) и т.д.
+# ВАЖНО: в сами переменные DESTDIR НЕ включаем — иначе переопределение переменной
+# извне (например, make install libdir=%{_libdir}) молча снимает DESTDIR.
 
 # bindir — исполняемые файлы.
-bindir      = $(DESTDIR)$(exec_prefix)/bin
+bindir      = $(exec_prefix)/bin
 # datarootdir — архитектурно-независимые данные.
-datarootdir = $(DESTDIR)$(prefix)/share
+datarootdir = $(prefix)/share
 # libdir — архитектурно-зависимые библиотеки.
-libdir      = $(DESTDIR)$(exec_prefix)/lib
+libdir      = $(exec_prefix)/lib
 
 # docdir — документация именно этой утилиты.
 docdir      = $(datarootdir)/doc/$(NAME)
@@ -48,3 +50,5 @@ man6dir     = $(mandir)/man6
 man7dir     = $(mandir)/man7
 # man8dir — man-страницы раздела 8 (системное администрирование).
 man8dir     = $(mandir)/man8
+# строка обязана завершаться переводом строки: make dist делает
+# cat ../common/fhs.mk Makefile, иначе последняя строка склеится с .PHONY

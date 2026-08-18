@@ -73,7 +73,9 @@ MAN := $(or $(wildcard $(NAME).1),$(NAME).1)
 LIC := $(or $(wildcard LICENSE),LICENSE)
 
 # install не зависит от all: при сборке rpm бинарь уже в tar и пересборка не нужна.
+# DESTDIR в переменные fhs.mk не входит — префиксуем правила сами (autoconf-схема).
 install:
+	install -d $(DESTDIR)$(bindir) $(DESTDIR)$(man1dir) $(DESTDIR)$(licensdir)
 	install -m 755 $(BIN) $(DESTDIR)$(bindir)/$(NAME)
 	install -m 644 $(MAN) $(DESTDIR)$(man1dir)/$(NAME).1
 	install -m 644 $(LIC) $(DESTDIR)$(licensdir)/LICENSE

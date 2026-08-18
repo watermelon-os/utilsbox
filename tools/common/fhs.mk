@@ -9,19 +9,26 @@
 prefix      = /usr/local
 # exec_prefix — = prefix, если нет особой раскладки архитектурно-зависимых файлов.
 exec_prefix = $(prefix)
-# bindir — исполняемые файлы.
-bindir      = $(exec_prefix)/bin
-# datarootdir — архитектурно-независимые данные.
-datarootdir = $(prefix)/share
-# docdir — документация именно этой утилиты.
-docdir      = $(datarootdir)/doc/$(NAME)
-# licensdir — лицензия (соглашение Fedora: /usr/share/licenses/<name>).
-licensdir   = $(datarootdir)/licenses/$(NAME)
 
 # DESTDIR — не объявляется здесь (это не наша переменная), а передаётся извне.
 # Мотивация: стандартный механизм staging-установки — устанавливать не в корень ФС,
 # а в $DESTDIR<путь>, чтобы потом упаковать в rpm/deb/т.п. без прав root.
 # Работает из-за того, что в правилах install пути написаны как $(DESTDIR)$(bindir) и т.д.
+
+# bindir — исполняемые файлы.
+bindir      = $(DESTDIR)$(exec_prefix)/bin
+# datarootdir — архитектурно-независимые данные.
+datarootdir = $(DESTDIR)$(prefix)/share
+# libdir — архитектурно-зависимые библиотеки.
+libdir      = $(DESTDIR)$(exec_prefix)/lib
+
+# docdir — документация именно этой утилиты.
+docdir      = $(datarootdir)/doc/$(NAME)
+# licensdir — лицензия (соглашение Fedora: /usr/share/licenses/<name>).
+licensdir   = $(datarootdir)/licenses/$(NAME)
+# node_modulesdir — системный каталог Node.js-пакетов.
+node_modulesdir = $(libdir)/node_modules
+
 
 # mandir — man-страницы.
 mandir      = $(datarootdir)/man

@@ -25,6 +25,10 @@ datarootdir = $(prefix)/share
 libdir      = $(exec_prefix)/lib
 # sysconfdir — системные конфигурационные файлы.
 sysconfdir = $(prefix)/etc
+# srvdir — данные, предоставляемые системой по сети.
+srvdir = $(prefix)/srv
+# localstatedir — изменяемые данные системы.
+localstatedir = $(prefix)/var
 
 # docdir — документация именно этой утилиты.
 docdir      = $(datarootdir)/doc/$(NAME)

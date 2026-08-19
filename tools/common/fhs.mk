@@ -29,6 +29,8 @@ sysconfdir = $(prefix)/etc
 srvdir = $(prefix)/srv
 # localstatedir — изменяемые данные системы.
 localstatedir = $(prefix)/var
+# unitdir юниты systemd
+unitdir = $(prefix)/lib/systemd/system
 
 # docdir — документация именно этой утилиты.
 docdir      = $(datarootdir)/doc/$(NAME)

@@ -23,6 +23,8 @@ bindir      = $(exec_prefix)/bin
 datarootdir = $(prefix)/share
 # libdir — архитектурно-зависимые библиотеки.
 libdir      = $(exec_prefix)/lib
+# sysconfdir — системные конфигурационные файлы.
+sysconfdir = $(prefix)/etc
 
 # docdir — документация именно этой утилиты.
 docdir      = $(datarootdir)/doc/$(NAME)

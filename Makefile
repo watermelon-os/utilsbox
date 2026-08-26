@@ -45,7 +45,7 @@ COMMON_DIR = tools/common
 # если common/ расширится, здесь явно прописываются новые объектники по одному.
 HELLO_OBJ = $(BUILD_DIR)/common/hello.o
 
-include ../common/fhs.mk
+include fhs.mk
 
 all: $(BUILD_DIR)/$(NAME)
 
@@ -121,3 +121,5 @@ print:
 	@echo $(subst XXX,*,$(MKTEMP_TEMP))
 	echo $(RPMBUILD_DIR)/RPMS/*/$(NAMEVER)*.rpm
 	@echo $(DESTDIR)$(licensdir)
+	echo $(NAME)
+	echo $(wildcard $(NAME))

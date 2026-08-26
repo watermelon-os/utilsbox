@@ -8,11 +8,7 @@
 #include <sys/syscall.h>
 #include <unistd.h>
 
-#include "hello.h"
-
-#ifndef VERSION
-#define VERSION "unknown"
-#endif
+#include "common.h"
 
 int *get_all_pids(int *pids_count) {
   int *pids = NULL;
@@ -170,13 +166,12 @@ process_status *get_all_process_statuses(int *statuses_count) {
 //   free(arr);
 // }
 
-int main(int argc, char **argv) {
+int ps_main(int argc, char **argv) {
   (void)argc;
   (void)argv;
 
   int pids_count;
   get_all_pids(&pids_count);
-  printf("%s %s\n", "watermelon-ps", VERSION);
   printf("количество процессов сейчас %d\n", pids_count);
 
   int n;

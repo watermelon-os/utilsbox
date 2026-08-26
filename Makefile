@@ -35,35 +35,40 @@ BUILD_DIR = .build
 
 RPMBUILD_DIR = .rpmbuild
 
-# COMMON_DIR — путь к общему коду (tools/common).
-# Мотивация: одно место, где задан путь к переиспользуемому коду, вместо повторения
-# его в каждом правиле; тоже можно переопределить извне при необходимости.
-COMMON_DIR = tools/common
+COMMON_DIR = src/common
+PS_DIR = src/ps
+CFLAGS += -I$(COMMON_DIR) -I$(PS_DIR)
 
-# HELLO_OBJ — объектник общего кода, который использует только эта утилита.
+# COMMON_OBJ — объектник общего кода, который использует только эта утилита.
 # Мотивация: удобство — один объект ссылается и в правиле сборки, и в списке зависимостей;
 # если common/ расширится, здесь явно прописываются новые объектники по одному.
-HELLO_OBJ = $(BUILD_DIR)/common/hello.o
+COMMON_OBJ = $(BUILD_DIR)/common.o
+PS_OBJ = $(BUILD_DIR)/ps.o
+
 
 include fhs.mk
 
 all: $(BUILD_DIR)/$(NAME)
 
-$(BUILD_DIR)/common/hello.o: $(COMMON_DIR)/hello.c
+$(COMMON_OBJ): $(COMMON_DIR)/common.c
 	mkdir -p $(@D)
-	$(CC) $(CFLAGS) -I$(COMMON_DIR) -c $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD_DIR)/$(NAME): main.c $(HELLO_OBJ)
+$(PS_OBJ): $(PS_DIR)/ps.c
 	mkdir -p $(@D)
-	$(CC) $(CFLAGS) -I$(COMMON_DIR) -o $@ $< $(HELLO_OBJ)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/$(NAME): src/main.c $(COMMON_OBJ) $(PS_OBJ)
+	mkdir -p $(@D)
+	$(CC) $(CFLAGS) -o $@ $< $(COMMON_OBJ) $(PS_OBJ)
 
 # Release-сборка для пакета: -O2, затем strip убирает debug-инфу.
 RELEASE_CFLAGS = $(CFLAGS) -O2
 RELEASE_BIN = $(BUILD_DIR)/$(NAME)-release
 
-$(RELEASE_BIN): main.c $(HELLO_OBJ)
+$(RELEASE_BIN): src/main.c $(COMMON_OBJ) $(PS_OBJ)
 	mkdir -p $(@D)
-	$(CC) $(RELEASE_CFLAGS) -I$(COMMON_DIR) -o $@ $< $(HELLO_OBJ)
+	$(CC) $(RELEASE_CFLAGS) -o $@ $< $(COMMON_OBJ) $(PS_OBJ)
 	strip $@
 
 # Внутри распакованного tar (rpmbuild) файлы лежат плоско в cwd, в дереве исходников —
@@ -123,3 +128,4 @@ print:
 	@echo $(DESTDIR)$(licensdir)
 	echo $(NAME)
 	echo $(wildcard $(NAME))
+	@echo $(@D)
